@@ -1,5 +1,3 @@
-## Como usar
-
 # Inicializar um repositório Git vazio
 git init
 

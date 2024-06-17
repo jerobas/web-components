@@ -1,0 +1,46 @@
+name: Run test on docker
+
+on:
+  push:
+    paths:
+      - '**/*.yml'
+      - '**/*.json'
+      - '**/*.ts'
+      - '**/*.js'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
+      - name: Create Docker container
+        run: |
+          docker run -d --name test-container ubuntu:latest
+          docker exec test-container apt-get update
+          docker exec test-container apt-get install -y curl
+          docker exec test-container curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          docker exec test-container apt-get install -y nodejs
+
+      - name: Copy code to Docker container
+        run: |
+          docker cp . test-container:/app
+
+      - name: Install dependencies
+        run: |
+          docker exec test-container bash -c "cd /app && npm install"
+
+      - name: Run tests
+        run: |
+          docker exec test-container bash -c "cd /app && npm run test"
+
+      - name: Clean up
+        if: always()
+        run: |
+          docker stop test-container
+          docker rm test-container
